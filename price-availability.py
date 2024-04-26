@@ -1,3 +1,4 @@
+import asyncio
 import requests
 import aiohttp
 from aiohttp import web
@@ -8,14 +9,14 @@ import re
 from telegram import Bot
 from telegram.ext import Application, CallbackContext, JobQueue
 
-URL = "https://mta.ua/telefoni-ta-smartfoni/671723-smartfon-apple-iphone-14-pro-256gb-deep-purple"
+URL = "https://mta.ua/telefoni-ta-smartfoni/696169-smartfon-apple-iphone-8-64gb-space-gray-a-by"
 TELEGRAM_TOKEN = '7146403916:AAG5cLCGPeuSs__PWD7ZU5RhWmpHZL4Im5I'
 CHAT_ID = '530420753'
 ADMIN_CHAT_ID = '530420753'
-STORE_NAME = "MTA"  # Назва магазину
-IN_STOCK_TEXT = "В наявності"  # Текст, що позначає наявність товару
-last_in_stock_status = IN_STOCK_TEXT  # Зберігаємо останній статус наявності товару
-product_name = None  # Зберігаємо назву товару
+STORE_NAME = "MTA"
+IN_STOCK_TEXT = "В наявності"
+last_in_stock_status = IN_STOCK_TEXT
+product_name = None
 
 bot = Bot(token=TELEGRAM_TOKEN)
 last_price = None
@@ -31,13 +32,11 @@ async def start_server():
 
 async def fetch_price():
     global last_success_time, last_in_stock_status, product_name
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-    }
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     try:
         response = requests.get(URL, headers=headers)
         if response.status_code != 200:
-            print(f"{STORE_NAME}:Не вдалося завантажити сторінку, статус код: {response.status_code}")
+            print(f"{STORE_NAME}: Не вдалося завантажити сторінку, статус код: {response.status_code}")
             return None
         soup = BeautifulSoup(response.text, 'html.parser')
         title_element = soup.find('h1', class_='product__title')
@@ -50,7 +49,6 @@ async def fetch_price():
             if current_stock_status != last_in_stock_status:
                 if current_stock_status != IN_STOCK_TEXT:
                     message = f"{STORE_NAME}: {product_name} - Статус наявності товару змінився: {current_stock_status}"
-                    print(f"{STORE_NAME}: Статус наявності: {current_stock_status}")
                     await bot.send_message(chat_id=CHAT_ID, text=message)
                 last_in_stock_status = current_stock_status
         if not product_element or 'data-ecommerce' not in product_element.attrs:
@@ -86,11 +84,13 @@ async def check_price(context: CallbackContext):
             last_price = current_price
 
 def main():
+    loop = asyncio.get_event_loop()
+    loop.create_task(start_server())  # Запускаємо HTTP сервер у фоні
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     job_queue = application.job_queue
-    job_queue.run_repeating(check_price, interval=15)
-    job_queue.run_repeating(check_availability, interval=15)
+    job_queue.run_repeating(check_price, interval=5)
+    job_queue.run_repeating(check_availability, interval=5)
     application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
