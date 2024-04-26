@@ -9,7 +9,7 @@ import re
 from telegram import Bot
 from telegram.ext import Application, CallbackContext, JobQueue
 
-URL = "https://mta.ua/telefoni-ta-smartfoni/696169-smartfon-apple-iphone-8-64gb-space-gray-a-by"
+URL = "https://mta.ua/telefoni-ta-smartfoni/671723-smartfon-apple-iphone-14-pro-256gb-deep-purple"
 TELEGRAM_TOKEN = '7146403916:AAG5cLCGPeuSs__PWD7ZU5RhWmpHZL4Im5I'
 CHAT_ID = '530420753'
 ADMIN_CHAT_ID = '530420753'
@@ -88,8 +88,8 @@ def main():
     loop.create_task(start_server())  # Запускаємо HTTP сервер у фоні
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     job_queue = application.job_queue
-    job_queue.run_repeating(check_price, interval=5)
-    job_queue.run_repeating(check_availability, interval=5)
+    job_queue.run_repeating(check_price, interval=3600)
+    job_queue.run_repeating(check_availability, interval=3600)
     application.run_polling()
 
 if __name__ == '__main__':
