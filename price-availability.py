@@ -1,8 +1,10 @@
 import requests
+import aiohttp
+from aiohttp import web
 from bs4 import BeautifulSoup
 import json
 import time
-import re  # Додамо модуль для регулярних виразів
+import re
 from telegram import Bot
 from telegram.ext import Application, CallbackContext, JobQueue
 
@@ -18,6 +20,14 @@ product_name = None  # Зберігаємо назву товару
 bot = Bot(token=TELEGRAM_TOKEN)
 last_price = None
 last_success_time = None
+
+async def start_server():
+    app = web.Application()
+    app.router.add_get('/', lambda request: web.Response(text="Server is running"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 80)  # Змініть порт, якщо необхідно
+    await site.start()
 
 async def fetch_price():
     global last_success_time, last_in_stock_status, product_name
@@ -78,8 +88,8 @@ async def check_price(context: CallbackContext):
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
     job_queue = application.job_queue
-    job_queue.run_repeating(check_price, interval=86400)
-    job_queue.run_repeating(check_availability, interval=86400)
+    job_queue.run_repeating(check_price, interval=15)
+    job_queue.run_repeating(check_availability, interval=15)
     application.run_polling()
 
 if __name__ == '__main__':
